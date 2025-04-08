@@ -11,7 +11,7 @@ class AutoText:
         self.buffer = ""
         self.shortcuts = self.load_shortcuts()
         self.listener = None
-        self.typing_delay = 0.02  # 20ms delay between characters
+        self.typing_delay = 0.01  # 5ms delay between characters
         self.is_typing = False
         self.current_text = ""
         self.current_position = 0
@@ -31,28 +31,26 @@ class AutoText:
                 self.is_typing = False
                 print("Typing interrupted. Press ESC again to exit.")
                 return True
-            elif key == Key.esc and not self.is_typing:
-                # Exit the application
-                print("Exiting AutoText...")
-                return False
-            elif hasattr(key, 'char') and not self.is_typing:
-                self.buffer += key.char
-                # Check if buffer matches any shortcut
-                for shortcut, text in self.shortcuts.items():
-                    if self.buffer.endswith(shortcut):
-                        # Delete the shortcut text
-                        for _ in range(len(shortcut)):
-                            self.keyboard.press(Key.backspace)
-                            self.keyboard.release(Key.backspace)
-                            time.sleep(0.02)  # Small delay when deleting
-                        
-                        # Start typing the replacement text
-                        self.is_typing = True
-                        self.current_text = text
-                        self.current_position = 0
-                        self.type_next_character()
-                        self.buffer = ""
-                        break
+            elif hasattr(key, 'char'):
+                # Only process new input if we're not currently typing
+                if not self.is_typing:
+                    self.buffer += key.char
+                    # Check if buffer matches any shortcut
+                    for shortcut, text in self.shortcuts.items():
+                        if self.buffer.endswith(shortcut):
+                            # Delete the shortcut text
+                            for _ in range(len(shortcut)):
+                                self.keyboard.press(Key.backspace)
+                                self.keyboard.release(Key.backspace)
+                                time.sleep(0.02)  # Small delay when deleting
+                            
+                            # Start typing the replacement text
+                            self.is_typing = True
+                            self.current_text = text
+                            self.current_position = 0
+                            self.type_next_character()
+                            self.buffer = ""
+                            break
         except Exception as e:
             print(f"Error in on_press: {e}")
             self.is_typing = False
@@ -71,6 +69,9 @@ class AutoText:
         if self.current_position < len(self.current_text):
             time.sleep(self.typing_delay)
             self.type_next_character()
+        else:
+            # Reset typing state when finished
+            self.is_typing = False
 
     def on_release(self, key):
         pass
