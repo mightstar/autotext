@@ -9,9 +9,10 @@ class AutoText:
     def __init__(self):
         self.keyboard = Controller()
         self.buffer = ""
+        self.max_buffer_size = 30  # Maximum number of characters to keep in buffer
         self.shortcuts = self.load_shortcuts()
         self.listener = None
-        self.typing_delay = 0.01  # 5ms delay between characters
+        self.typing_delay = 0.01  # 10ms delay between characters
         self.is_typing = False
         self.current_text = ""
         self.current_position = 0
@@ -24,6 +25,13 @@ class AutoText:
             print(f"Error loading shortcuts: {e}")
             return {}
 
+    def add_to_buffer(self, char):
+        """Add a character to the buffer and maintain the maximum size"""
+        self.buffer += char
+        # Keep only the last max_buffer_size characters
+        if len(self.buffer) > self.max_buffer_size:
+            self.buffer = self.buffer[-self.max_buffer_size:]
+
     def on_press(self, key):
         try:
             if key == Key.esc and self.is_typing:
@@ -34,7 +42,8 @@ class AutoText:
             elif hasattr(key, 'char'):
                 # Only process new input if we're not currently typing
                 if not self.is_typing:
-                    self.buffer += key.char
+                    self.add_to_buffer(key.char)
+                    print(self.buffer)
                     # Check if buffer matches any shortcut
                     for shortcut, text in self.shortcuts.items():
                         if self.buffer.endswith(shortcut):
@@ -49,7 +58,7 @@ class AutoText:
                             self.current_text = text
                             self.current_position = 0
                             self.type_next_character()
-                            self.buffer = ""
+                            self.buffer = ""  # Clear buffer after successful replacement
                             break
         except Exception as e:
             print(f"Error in on_press: {e}")
